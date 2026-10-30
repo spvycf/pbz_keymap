@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PBZ 手柄按键自定义</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --panel-2:#1c2330; --line:#2a3441;
+    --text:#e6edf3; --muted:#8b98a8; --accent:#6ea8fe; --accent-2:#3b82f6;
+    --good:#3fb950; --warn:#d29922; --bad:#f85149;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 20% -10%,#1b2432 0%,var(--bg) 55%);color:var(--text);
+       font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;}
+  header{position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);background:rgba(14,17,22,.82);border-bottom:1px solid var(--line);}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  .top{display:flex;align-items:center;gap:16px;padding:14px 0}
+  .logo{font-weight:700;font-size:17px;letter-spacing:.3px}
+  .logo span{color:var(--accent)}
+  .meta{color:var(--muted);font-size:12px;display:flex;gap:14px;flex-wrap:wrap}
+  .spacer{flex:1}
+  button,select,input{font:inherit;color:inherit}
+  button{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:8px 14px;cursor:pointer;transition:.15s}
+  button:hover{border-color:#3b4858;background:#232b39}
+  button.primary{background:linear-gradient(180deg,#4c8ef7,#2f6fe0);border-color:#5b97ff;font-weight:600}
+  button.primary:hover{filter:brightness(1.06)}
+  button.ghost{background:transparent}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .layout{display:grid;grid-template-columns:1fr 320px;gap:20px;padding:20px 0 60px}
+  @media(max-width:860px){.layout{grid-template-columns:1fr}}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0)) ,var(--panel);border:1px solid var(--line);border-radius:14px}
+  .card h2{margin:0;padding:14px 16px;border-bottom:1px solid var(--line);font-size:14px;font-weight:600;color:#c9d6e5;letter-spacing:.2px}
+  .tabs{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tab{padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:13px;cursor:pointer}
+  .tab.active{background:rgba(110,168,254,.14);border-color:rgba(110,168,254,.55);color:#cfe0ff}
+  .tab .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--good);margin-left:8px;vertical-align:middle}
+  .rows{padding:8px 16px 16px}
+  .action{padding:12px 0;border-bottom:1px dashed rgba(255,255,255,.06)}
+  .action:last-child{border-bottom:none}
+  .action-head{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+  .action-name{font-weight:600;font-size:14px}
+  .action-id{color:var(--muted);font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .binding{display:grid;grid-template-columns:96px 1fr 1fr;gap:10px;align-items:center;padding:5px 0 5px 4px;border-radius:8px}
+  .binding.changed{background:rgba(110,168,254,.07);box-shadow:inset 3px 0 0 var(--accent)}
+  .slot{color:var(--muted);font-size:12px}
+  .default{color:var(--muted);font-size:12px;text-align:right}
+  select{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;outline:none}
+  select:focus{border-color:var(--accent-2);box-shadow:0 0 0 3px rgba(59,130,246,.18)}
+  option{background:#1c2330}
+  .side{display:flex;flex-direction:column;gap:16px}
+  .side .body{padding:14px 16px}
+  .kv{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:12px}
+  .kv .k{color:var(--muted)}
+  .kv .v{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all;text-align:right}
+  .conflict{padding:10px 12px;border-radius:10px;border:1px solid rgba(210,153,34,.35);background:rgba(210,153,34,.08);color:#f0d38a;font-size:12px;margin-bottom:8px}
+  .conflict.ok{border-color:rgba(63,185,80,.35);background:rgba(63,185,80,.08);color:#9be3a6}
+  .actions{display:flex;flex-direction:column;gap:10px;padding:14px 16px}
+  .actions button{width:100%}
+  .note{color:var(--muted);font-size:12px;padding:0 16px 14px;line-height:1.6}
+  .status{margin-top:6px;font-size:12px;color:var(--muted);min-height:18px}
+  .status.err{color:var(--bad)}
+  .status.ok{color:var(--good)}
+  .warnlist{margin:8px 0 0;padding-left:18px;color:#f0d38a;font-size:12px}
+  .hidden{display:none}
+  .filewrap{display:flex;gap:8px}
+  .filewrap label.btnlike{flex:1;text-align:center;background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:8px 14px;cursor:pointer}
+  .filewrap label.btnlike:hover{border-color:#3b4858}
+  input[type=file]{display:none}
+  .toggle{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}
+  .toggle input{accent-color:#3b82f6}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap top">
+    <div class="logo">PBZ <span>按键自定义</span></div>
+    <div class="meta">
+      <span id="meta-engine"></span>
+      <span id="meta-source"></span>
+      <span id="meta-current"></span>
+    </div>
+    <div class="spacer"></div>
+    <button class="ghost" id="btn-reset">恢复内置模板</button>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <main class="card">
+    <div class="tabs" id="tabs"></div>
+    <div class="rows" id="rows"></div>
+  </main>
+
+  <aside class="side">
+    <section class="card">
+      <h2>存档与输出</h2>
+      <div class="body">
+        <div class="filewrap">
+          <label class="btnlike" for="file">上传自己的 .sav</label>
+          <input id="file" type="file" accept=".sav">
+        </div>
+        <div class="kv"><span class="k">引擎</span><span class="v" id="kv-engine">-</span></div>
+        <div class="kv"><span class="k">存档类</span><span class="v" id="kv-class">-</span></div>
+        <div class="kv"><span class="k">大小</span><span class="v" id="kv-size">-</span></div>
+        <div class="kv"><span class="k">SHA-256</span><span class="v" id="kv-sha">-</span></div>
+      </div>
+      <div class="actions">
+        <label class="toggle"><input type="checkbox" id="set-current" checked> 生成后把当前档切换为所选配置档</label>
+        <button class="primary" id="btn-generate">生成并下载 .sav</button>
+        <div class="status" id="status"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>冲突提示</h2>
+      <div class="body" id="conflicts"></div>
+      <div class="note">同一按键绑定多个动作是允许的（例如 A 同时用于跳跃与交互，由游戏原生逻辑决定优先级）。这里只做提示，不阻止生成。</div>
+    </section>
+  </aside>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const state = { model: null, profileId: null, draft: {}, setCurrent: true };
+
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function setStatus(msg, kind){
+  const el = $('#status');
+  el.textContent = msg || '';
+  el.className = 'status' + (kind ? ' ' + kind : '');
+}
+
+function profileById(id){
+  return state.model.profiles.find(p => p.id === id);
+}
+
+function effectiveKey(binding){
+  const d = state.draft[state.profileId] || {};
+  const k = binding.action + '||' + binding.slot;
+  return (k in d) ? d[k] : binding.key;
+}
+
+function renderMeta(){
+  const m = state.model;
+  $('#meta-engine').textContent = 'UE ' + m.header.engine + ' · CL ' + m.header.changelist;
+  $('#meta-source').textContent = m.source_name;
+  $('#meta-current').textContent = '当前档：' + m.current_profile;
+  $('#kv-engine').textContent = 'UE ' + m.header.engine;
+  $('#kv-class').textContent = m.header.class;
+  $('#kv-size').textContent = m.size + ' 字节';
+  $('#kv-sha').textContent = m.sha256.slice(0, 16) + '…';
+}
+
+function renderTabs(){
+  const el = $('#tabs');
+  el.innerHTML = '';
+  for (const p of state.model.profiles){
+    const b = document.createElement('button');
+    b.className = 'tab' + (p.id === state.profileId ? ' active' : '');
+    b.textContent = p.id;
+    if (p.id === state.model.current_profile){
+      const dot = document.createElement('span'); dot.className = 'dot'; b.appendChild(dot);
+    }
+    b.onclick = () => { state.profileId = p.id; state.draft[p.id] = state.draft[p.id] || {}; renderTabs(); renderRows(); renderConflicts(); };
+    el.appendChild(b);
+  }
+}
+
+function renderRows(){
+  const holder = $('#rows');
+  holder.innerHTML = '';
+  const p = profileById(state.profileId);
+  if (!p) return;
+
+  const groups = [];
+  const index = new Map();
+  for (const b of p.bindings){
+    if (!index.has(b.action)){ index.set(b.action, []); groups.push(b.action); }
+    index.get(b.action).push(b);
+  }
+
+  for (const action of groups){
+    const rows = index.get(action);
+    const box = document.createElement('div'); box.className = 'action';
+    const head = document.createElement('div'); head.className = 'action-head';
+    head.innerHTML = `<div class="action-name">${esc(rows[0].action_label)}</div><div class="action-id">${esc(action)}</div>`;
+    box.appendChild(head);
+
+    // 同动作、同当前键的槽位合并为一行，改动同步到这些槽位
+    const byKey = new Map();
+    for (const b of rows){
+      const k = effectiveKey(b);
+      if (!byKey.has(k)) byKey.set(k, []);
+      byKey.get(k).push(b);
+    }
+
+    for (const [keyVal, group] of byKey){
+      const row = document.createElement('div');
+      row.className = 'binding';
+      const slotText = [...new Set(group.map(b => b.slot_label))].join(' / ');
+      const defaultText = [...new Set(group.map(b => state.model.keys.find(k => k.id === b.default_key)?.label || b.default_key))].join(' / ');
+      const dk = document.createElement('div');
+      dk.className = 'default';
+      dk.textContent = '默认 ' + defaultText;
+      const slot = document.createElement('div'); slot.className = 'slot';
+      slot.textContent = slotText + (group.length > 1 ? `（同步 ${group.length} 槽）` : '');
+
+      const sel = document.createElement('select');
+      for (const g of state.model.key_groups){
+        const og = document.createElement('optgroup'); og.label = g;
+        for (const k of state.model.keys.filter(x => x.group === g)){
+          const o = document.createElement('option');
+          o.value = k.id; o.textContent = k.label;
+          og.appendChild(o);
+        }
+        if (og.children.length) sel.appendChild(og);
+      }
+      sel.value = keyVal;
+      sel.onchange = () => {
+        const d = state.draft[state.profileId] = state.draft[state.profileId] || {};
+        for (const b of group) d[b.action + '||' + b.slot] = sel.value;
+        renderRows();
+        renderConflicts();
+      };
+      row.classList.toggle('changed', group.some(b => keyVal !== b.key));
+      row.appendChild(slot); row.appendChild(sel); row.appendChild(dk);
+      box.appendChild(row);
+    }
+    holder.appendChild(box);
+  }
+}
+
+function renderConflicts(){
+  const el = $('#conflicts');
+  el.innerHTML = '';
+  const p = profileById(state.profileId);
+  if (!p) return;
+
+  const map = new Map();
+  for (const b of p.bindings){
+    const k = effectiveKey(b);
+    if (!map.has(k)) map.set(k, []);
+    const users = map.get(k);
+    if (!users.includes(b.action_label)) users.push(b.action_label);
+  }
+  const conflicts = [...map.entries()].filter(([, users]) => users.length > 1);
+  if (!conflicts.length){
+    const ok = document.createElement('div');
+    ok.className = 'conflict ok';
+    ok.textContent = '当前档没有重复按键。';
+    el.appendChild(ok);
+    return;
+  }
+  for (const [key, users] of conflicts){
+    const label = state.model.keys.find(k => k.id === key)?.label || key;
+    const div = document.createElement('div');
+    div.className = 'conflict';
+    div.textContent = `${label} → ${users.join('、')}`;
+    el.appendChild(div);
+  }
+}
+
+async function loadState(url, opts){
+  setStatus('处理中…');
+  const res = await fetch(url, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+  state.model = data;
+  if (!state.profileId || !data.profiles.some(p => p.id === state.profileId)){
+    state.profileId = data.default_profile && data.profiles.some(p => p.id === data.default_profile)
+      ? data.default_profile
+      : (data.profiles.find(p => p.id === data.current_profile)?.id || data.profiles[0].id);
+  }
+  state.draft = {};
+  renderMeta(); renderTabs(); renderRows(); renderConflicts();
+  setStatus('就绪', 'ok');
+}
+
+async function generate(){
+  const p = profileById(state.profileId);
+  if (!p) return;
+  const bindings = p.bindings.map(b => ({ action: b.action, slot: b.slot, key: effectiveKey(b) }));
+  setStatus('生成中…');
+  try{
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ profileId: state.profileId, setCurrent: $('#set-current').checked, bindings })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+    const bin = atob(data.data_b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const blob = new Blob([bytes], {type: 'application/octet-stream'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = data.filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    let msg = `已生成 ${data.filename}（${data.size} 字节），当前档 ${data.current_profile}。`;
+    setStatus(msg, 'ok');
+    const el = $('#conflicts');
+    if (data.warnings && data.warnings.length){
+      const w = document.createElement('div'); w.className = 'conflict';
+      w.innerHTML = '生成成功，但存在重复按键：<ul class="warnlist">' +
+        data.warnings.map(x => `<li>${esc(x)}</li>`).join('') + '</ul>';
+      el.prepend(w);
+    }
+  }catch(e){
+    setStatus(e.message, 'err');
+  }
+}
+
+$('#btn-generate').onclick = generate;
+$('#btn-reset').onclick = async () => {
+  try{ await loadState('/api/reset', {method:'POST'}); setStatus('已恢复内置模板', 'ok'); }
+  catch(e){ setStatus(e.message, 'err'); }
+};
+$('#file').onchange = async (ev) => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const buf = await f.arrayBuffer();
+  try{
+    await loadState('/api/upload', {method:'POST', headers:{'Content-Type':'application/octet-stream'}, body: buf});
+    setStatus('已载入 ' + f.name, 'ok');
+  }catch(e){ setStatus(e.message, 'err'); }
+  ev.target.value = '';
+};
+
+loadState('/api/state').catch(e => setStatus(e.message, 'err'));
+</script>
+</body>
+</html>
