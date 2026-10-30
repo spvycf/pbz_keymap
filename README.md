@@ -20,7 +20,7 @@ python3 app.py
 可选参数：
 
 ```bash
-python3 app.py --port 9000 --no-browser
+python3 app.py --port 9000
 ```
 
 ## 使用
@@ -75,7 +75,6 @@ python3 app.py --port 9000 --no-browser
 - 仅支持与本模板同结构/同版本的 `EnhancedInputUserSettings.sav`（UE 5.7.4，
   `ProjectPBZ.PBZInputUserSettings`）。其他版本会明确报错。
 - 只处理 Xbox 手柄族（`Family = Xbox`）的按键。
-- 不处理键盘映射。原文件里 Default / Custom2 在 `IA_ShadowArm` 槽位 3 存有一个
-  `LeftControl` 的异常残留值；工具会原样保留，除非你手动把它改掉。
+- 不处理键盘映射。
 - 同一按键绑定多个动作是允许的（如 A 同时用于跳跃与交互），工具只提示不阻止。
 - 未运行游戏验证实际输入优先级；只保证文件结构与字段正确。
